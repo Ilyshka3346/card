@@ -5,7 +5,149 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Банковская карта</title>
     <style>
-        /* Стили остаются такими же, как в предыдущем коде */
+       
+       body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            position: relative;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        #generateButton {
+            padding: 20px 40px;
+            font-size: 24px;
+            color: white;
+            background-color: #8a2be2;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        #generateButton:hover {
+            background-color: #7b1fa2;
+        }
+
+        #generateButton:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .card-container {
+            display: none;
+            text-align: center;
+        }
+
+        .card {
+            background: linear-gradient(45deg, #1a9d60, #17814e);
+            border-radius: 15px;
+            padding: 25px;
+            color: white;
+            width: 400px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .card-code {
+            font-size: 24px;
+            letter-spacing: 3px;
+            margin: 20px 0;
+        }
+
+        .balance {
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+
+        .transfer-section {
+            margin-top: 20px;
+        }
+
+        input {
+            padding: 10px;
+            margin: 10px;
+            width: 200px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        button.action {
+            padding: 10px 20px;
+            background-color: #8a2be2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .history {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 10px;
+            color: #333;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+            transition: max-height 0.3s ease;
+        }
+
+        .history.collapsed {
+            max-height: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .history-item {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .toggle-history {
+            margin-top: 10px;
+            background-color: #8a2be2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .admin-container {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #adminAccessButton {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #8a2be2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #adminAccessButton:hover {
+            background-color: #7b1fa2;
+        }
+    
     </style>
 </head>
 <body>
@@ -55,7 +197,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://ваш-сервер.onrender.com/api/cards'; // Замените на ваш URL
+        const API_URL = 'https://ваш-сервер.vercel.app/api/cards'; // Замените на ваш URL Vercel
 
         let currentCard = null;
 
