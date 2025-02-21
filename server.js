@@ -19,7 +19,7 @@ app.options('*', cors()); // Разрешить CORS для всех маршр�
 
 // Настройка Supabase
 const supabaseUrl = 'https://zkhnijcxqhuljvufgrqa.supabase.co'; // Замените на ваш URL
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpraG5pamN4cWh1bGp2dWZncnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAxMzk0ODYsImV4cCI6MjA1NTcxNTQ4Nn0.CcT8Ok51EpfyWJngtlQgkQQvtmZnN7uLyRW1NGegS6weyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpraG5pamN4cWh1bGp2dWZncnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAxMzk0ODYsImV4cCI6MjA1NTcxNTQ4Nn0.CcT8Ok51EpfyWJngtlQgkQQvtmZnN7uLyRW1NGegS6w'; // Замените на ваш ключ
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpraG5pamN4cWh1bGp2dWZncnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAxMzk0ODYsImV4cCI6MjA1NTcxNTQ4Nn0.CcT8Ok51EpfyWJngtlQgkQQvtmZnN7uLyRW1NGegS6w'; // Замените на ваш ключ
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Middleware
@@ -33,6 +33,11 @@ const generateCardCode = () => {
     }
     return code.match(/.{1,4}/g).join(' ');
 };
+
+// Корневой маршрут /api/cards
+app.get('/api/cards', (req, res) => {
+    res.json({ message: 'Добро пожаловать в API банковских карт!' });
+});
 
 // Создание новой карты
 app.post('/api/cards/create', async (req, res) => {
