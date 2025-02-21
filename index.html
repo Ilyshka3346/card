@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Банковская карта</title>
+    <title>Карта GOM</title>
     <style>
         body {
             display: flex;
@@ -11,127 +11,110 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            font-family: Arial, sans-serif;
             background-color: #f0f0f0;
-            position: relative;
-        }
-
-        .container {
+            font-family: Arial, sans-serif;
             text-align: center;
         }
-
-        #generateButton, .action, #adminAccessButton {
-            padding: 15px 30px;
-            font-size: 18px;
+        button {
+            background-color: #8a2be2; /* Фиолетовый цвет */
             color: white;
-            background-color: #8a2be2;
             border: none;
-            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 18px;
             cursor: pointer;
-            transition: background 0.3s;
+            border-radius: 5px;
+            margin: 10px;
         }
-
-        #generateButton:hover, .action:hover, #adminAccessButton:hover {
-            background-color: #7b1fa2;
+        button:hover {
+            background-color: #7b1fa2; /* Темнее фиолетовый */
         }
-
-        #generateButton:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
-        .card-container {
-            display: none;
-            text-align: center;
-        }
-
         .card {
-            background: linear-gradient(45deg, #1a9d60, #17814e);
-            border-radius: 15px;
-            padding: 25px;
+            background-color: #4caf50; /* Зеленый цвет */
             color: white;
-            width: 400px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 18px;
+            display: none; /* Скрываем карту по умолчанию */
         }
-
-        .card-code {
-            font-size: 24px;
-            letter-spacing: 3px;
-            margin: 20px 0;
-        }
-
-        .balance {
-            font-size: 20px;
-            margin-bottom: 20px;
-        }
-
         input {
             padding: 10px;
+            font-size: 16px;
             margin: 10px;
-            width: 200px;
             border-radius: 5px;
-            border: 1px solid #ddd;
-        }
-
-        .history {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: white;
-            border-radius: 10px;
-            color: #333;
-            text-align: left;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .admin-container {
-            display: none;
-            margin-top: 20px;
-            padding: 20px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 1px solid #ccc;
         }
     </style>
 </head>
 <body>
-    <button id="adminAccessButton" onclick="showAdminLogin()">Войти в админ-панель</button>
-    <div class="container" id="mainMenu">
-        <button id="generateButton">Получить карту</button>
+    <div id="mainPage">
+        <button id="getCardButton">Получить карту</button>
     </div>
-    <div class="container card-container" id="cardMenu">
-        <div class="card">
-            <div class="card-code" id="cardCode"></div>
-            <div class="balance">Баланс: <span id="cardBalance">0</span> GOM</div>
-            <div class="history" id="history"></div>
+
+    <div id="cardPage" class="card">
+        <h1>Ваша карта GOM</h1>
+        <p>Код карты: <strong id="cardCode"></strong></p>
+        <p>Баланс: <strong id="cardBalance">0</strong> GOM</p>
+        <div>
+            <input type="text" id="toCode" placeholder="Код карты получателя">
+            <input type="number" id="amount" placeholder="Сумма">
+            <button id="transferButton">Перевести</button>
         </div>
     </div>
+
     <script>
-        const API_URL = 'https://card-eta-ten.vercel.app/api/cards';
-        let currentCard = null;
-        document.getElementById('generateButton').addEventListener('click', async () => {
-            const response = await fetch(`${API_URL}/create`, { method: 'POST' });
-            if (response.ok) {
+        let currentCardCode = '';
+
+        // Получить карту
+        document.getElementById('getCardButton').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/generate-card');
                 const data = await response.json();
-                currentCard = data;
-                localStorage.setItem('currentCardCode', currentCard.code);
-                updateCardUI();
-                document.getElementById('generateButton').disabled = true;
-                document.getElementById('cardMenu').style.display = 'block';
-                document.getElementById('mainMenu').style.display = 'none';
+
+                currentCardCode = data.code;
+
+                // Показываем карту и скрываем главную страницу
+                document.getElementById('mainPage').style.display = 'none';
+                document.getElementById('cardPage').style.display = 'block';
+
+                // Отображаем код карты
+                document.getElementById('cardCode').textContent = data.code;
+            } catch (error) {
+                console.error('Ошибка:', error);
             }
         });
-        function updateCardUI() {
-            if (currentCard) {
-                document.getElementById('cardCode').textContent = currentCard.code;
-                document.getElementById('cardBalance').textContent = currentCard.balance;
-                document.getElementById('history').innerHTML = currentCard.history.map(txn => `<div>${txn.date}: ${txn.amount} GOM</div>`).join('');
+
+        // Перевод средств
+        document.getElementById('transferButton').addEventListener('click', async () => {
+            const toCode = document.getElementById('toCode').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+
+            if (!toCode || !amount || amount <= 0) {
+                alert('Пожалуйста, заполните все поля корректно.');
+                return;
             }
-        }
-        function showAdminLogin() {
-            document.getElementById('mainMenu').style.display = 'none';
-            document.getElementById('adminLogin').style.display = 'block';
-        }
+
+            try {
+                const response = await fetch('https://your-vercel-app.vercel.app/transfer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fromCode: currentCardCode, toCode, amount }),
+                });
+
+                const result = await response.json();
+
+                if (result.error) {
+                    alert(result.error);
+                } else {
+                    alert('Перевод выполнен успешно!');
+                    // Обновляем баланс (можно добавить запрос к API для получения актуального баланса)
+                    const balanceElement = document.getElementById('cardBalance');
+                    const currentBalance = parseFloat(balanceElement.textContent);
+                    balanceElement.textContent = (currentBalance - amount).toFixed(2);
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+            }
+        });
     </script>
 </body>
 </html>
