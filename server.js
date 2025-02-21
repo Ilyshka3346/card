@@ -8,7 +8,7 @@ const port = process.env.PORT || 3000;
 
 // Настройка CORS
 app.use(cors({
-    origin: 'https://ilyshka3346.github.io', // Замените на ваш URL GitHub Pages
+    origin: 'https://ilyshka3346.github.io/card/', // Замените на ваш URL GitHub Pages
     methods: ['GET', 'POST', 'OPTIONS'], // Разрешить GET, POST и OPTIONS
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true // Разрешить передачу куки и заголовков авторизации
