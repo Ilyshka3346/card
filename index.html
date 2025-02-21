@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Банковская карта</title>
+    <style>
+        /* Стили остаются такими же, как в предыдущем коде */
+    </style>
+</head>
+<body>
+
+    <button id="adminAccessButton" onclick="showAdminLogin()">Войти в админ-панель</button>
+
+    <div class="container" id="mainMenu">
+        <button id="generateButton">Получить карту</button>
+    </div>
+
+    <div class="container card-container" id="cardMenu">
+        <div class="card">
+            <div class="card-code" id="cardCode"></div>
+            <div class="balance">Баланс: <span id="cardBalance">0</span> GOM</div>
+            
+            <div class="transfer-section">
+                <button class="action" onclick="showTransferInput()">Перевести</button>
+                <div id="transferInput" class="hidden">
+                    <input type="text" id="recipientCard" placeholder="Номер карты получателя">
+                    <input type="number" id="amountInput" placeholder="Сумма перевода">
+                    <button class="action" onclick="makeTransfer()">Подтвердить</button>
+                    <div id="errorMessage" style="color: #ff4444; margin-top: 10px;"></div>
+                </div>
+            </div>
+
+            <div class="history" id="history">
+                <h3>История операций</h3>
+                <div id="historyList"></div>
+            </div>
+            <button class="toggle-history" onclick="toggleHistory()">Скрыть историю</button>
+        </div>
+    </div>
+
+    <div class="container admin-container" id="adminLogin" style="display: none;">
+        <h2>Вход в админ-панель</h2>
+        <input type="password" id="adminPassword" placeholder="Введите пароль">
+        <button class="action" onclick="checkAdminPassword()">Войти</button>
+        <div id="adminLoginMessage" style="color: #ff4444; margin-top: 10px;"></div>
+    </div>
+
+    <div class="container admin-container" id="adminMenu" style="display: none;">
+        <h2>Админ Панель</h2>
+        <input type="text" id="adminCardCode" placeholder="Номер карты">
+        <input type="number" id="adminAmount" placeholder="Сумма пополнения">
+        <button class="action" onclick="addFunds()">Пополнить карту</button>
+        <div id="adminMessage" style="color: #ff4444; margin-top: 10px;"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://ваш-сервер.onrender.com/api/cards'; // Замените на ваш URL
+
+        let currentCard = null;
+
+        // Загрузка данных карты при загрузке страницы
+        window.addEventListener('load', async () => {
+            const savedCardCode = localStorage.getItem('currentCardCode');
+            if (savedCardCode) {
+                const response = await fetch(`${API_URL}/${savedCardCode}`);
+                if (response.ok) {
+                    currentCard = await response.json();
+                    updateCardUI();
+                    showCardMenu();
+                } else {
+                    localStorage.removeItem('currentCardCode');
+                }
+            }
+        });
+
+        // Создание новой карты
+        document.getElementById('generateButton').addEventListener('click', async () => {
+            const response = await fetch(`${API_URL}/create`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+            currentCard = data;
+            localStorage.setItem('currentCardCode', currentCard.code); // Сохраняем номер карты
+            updateCardUI();
+            document.getElementById('generateButton').disabled = true;
+            showCardMenu();
+        });
+
+        // Пополнение баланса
+        const addFunds = async () => {
+            const cardCode = document.getElementById('adminCardCode').value;
+            const amount = parseInt(document.getElementById('adminAmount').value);
+
+            const response = await fetch(`${API_URL}/deposit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cardCode, amount })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (currentCard && currentCard.code === cardCode) {
+                    currentCard = data;
+                    updateCardUI();
+                }
+                document.getElementById('adminMessage').textContent = 'Баланс пополнен';
+            } else {
+                document.getElementById('adminMessage').textContent = 'Ошибка при пополнении';
+            }
+        };
+
+        // Перевод между картами
+        const makeTransfer = async () => {
+            const fromCard = currentCard.code;
+            const toCard = document.getElementById('recipientCard').value;
+            const amount = parseInt(document.getElementById('amountInput').value);
+
+            const response = await fetch(`${API_URL}/transfer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fromCard, toCard, amount })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                currentCard = data.sourceCard;
+                updateCardUI();
+                document.getElementById('errorMessage').textContent = 'Перевод выполнен';
+            } else {
+                const error = await response.json();
+                document.getElementById('errorMessage').textContent = error.error;
+            }
+        };
+
+        // Обновление интерфейса карты
+        const updateCardUI = () => {
+            if (currentCard) {
+                document.getElementById('cardCode').textContent = currentCard.code;
+                document.getElementById('cardBalance').textContent = currentCard.balance;
+                const historyList = document.getElementById('historyList');
+                historyList.innerHTML = currentCard.history.map(transaction => `
+                    <div class="history-item">
+                        [${transaction.date}] ${transaction.type}: ${transaction.amount} GOM
+                    </div>
+                `).join('');
+            }
+        };
+
+        // Показать/скрыть историю
+        const toggleHistory = () => {
+            const history = document.getElementById('history');
+            const toggleButton = document.querySelector('.toggle-history');
+            history.classList.toggle('collapsed');
+            toggleButton.textContent = history.classList.contains('collapsed') ? 'Показать историю' : 'Скрыть историю';
+        };
+
+        // Показать админ-панель
+        const showAdminLogin = () => {
+            document.getElementById('mainMenu').style.display = 'none';
+            document.getElementById('cardMenu').style.display = 'none';
+            document.getElementById('adminLogin').style.display = 'block';
+        };
+
+        // Проверка пароля админа
+        const checkAdminPassword = () => {
+            const password = document.getElementById('adminPassword').value;
+            const messageElement = document.getElementById('adminLoginMessage');
+
+            if (password === 'pipizZ') {
+                document.getElementById('adminLogin').style.display = 'none';
+                document.getElementById('adminMenu').style.display = 'block';
+            } else {
+                messageElement.textContent = 'Неверный пароль';
+            }
+        };
+
+        // Показать меню карты
+        const showCardMenu = () => {
+            document.getElementById('mainMenu').style.display = 'none';
+            document.getElementById('cardMenu').style.display = 'block';
+        };
+
+        // Показать поле для перевода
+        const showTransferInput = () => {
+            document.getElementById('transferInput').classList.remove('hidden');
+        };
+    </script>
+
+</body>
+</html>
