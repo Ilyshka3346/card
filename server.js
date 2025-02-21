@@ -8,14 +8,18 @@ const port = process.env.PORT || 3000;
 
 // Настройка CORS
 app.use(cors({
-    origin: 'https://ilyshka3346.github.io/card/', // Замените на ваш URL GitHub Pages
-    methods: ['GET', 'POST'], // Разрешить только GET и POST
-    allowedHeaders: ['Content-Type', 'Authorization']
+    origin: 'https://ilyshka3346.github.io', // Замените на ваш URL GitHub Pages
+    methods: ['GET', 'POST', 'OPTIONS'], // Разрешить GET, POST и OPTIONS
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true // Разрешить передачу куки и заголовков авторизации
 }));
+
+// Обработка предварительных запросов (OPTIONS)
+app.options('*', cors()); // Разрешить CORS для всех маршрутов
 
 // Настройка Supabase
 const supabaseUrl = 'https://zkhnijcxqhuljvufgrqa.supabase.co'; // Замените на ваш URL
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpraG5pamN4cWh1bGp2dWZncnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAxMzk0ODYsImV4cCI6MjA1NTcxNTQ4Nn0.CcT8Ok51EpfyWJngtlQgkQQvtmZnN7uLyRW1NGegS6w'; // Замените на ваш ключ
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpraG5pamN4cWh1bGp2dWZncnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAxMzk0ODYsImV4cCI6MjA1NTcxNTQ4Nn0.CcT8Ok51EpfyWJngtlQgkQQvtmZnN7uLyRW1NGegS6weyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpraG5pamN4cWh1bGp2dWZncnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAxMzk0ODYsImV4cCI6MjA1NTcxNTQ4Nn0.CcT8Ok51EpfyWJngtlQgkQQvtmZnN7uLyRW1NGegS6w'; // Замените на ваш ключ
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Middleware
