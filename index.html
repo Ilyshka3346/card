@@ -67,7 +67,7 @@
         // Получить карту
         document.getElementById('getCardButton').addEventListener('click', async () => {
             try {
-                const response = await fetch('/generate-card');
+                const response = await fetch('https://card-back-zeta.vercel.app/generate-card');
                 const data = await response.json();
 
                 currentCardCode = data.code;
@@ -94,7 +94,7 @@
             }
 
             try {
-                const response = await fetch('https://your-vercel-app.vercel.app/transfer', {
+                const response = await fetch('https://card-back-zeta.vercel.app/transfer', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ fromCode: currentCardCode, toCode, amount }),
