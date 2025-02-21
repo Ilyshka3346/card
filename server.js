@@ -47,6 +47,12 @@ app.post('/api/cards/create', async (req, res) => {
     }
 });
 
+app.use(cors({
+    origin: '*', // Разрешить запросы с любого домена
+    methods: ['GET', 'POST'], // Разрешить только GET и POST
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 // Пополнение баланса карты
 app.post('/api/cards/deposit', async (req, res) => {
     try {
