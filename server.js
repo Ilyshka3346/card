@@ -8,7 +8,7 @@ const port = process.env.PORT || 3000;
 
 // Настройка CORS
 app.use(cors({
-    origin: 'https://ilyshka3346.github.io/card/', // Замените на ваш URL GitHub Pages
+    origin: 'https://ilyshka3346.github.io/card/', // Разрешить запросы с GitHub Pages
     methods: ['GET', 'POST', 'OPTIONS'], // Разрешить GET, POST и OPTIONS
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true // Разрешить передачу куки и заголовков авторизации
@@ -58,115 +58,6 @@ app.post('/api/cards/create', async (req, res) => {
         res.json(newCard);
     } catch (error) {
         console.error('Ошибка при создании карты:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-// Пополнение баланса карты
-app.post('/api/cards/deposit', async (req, res) => {
-    try {
-        const { cardCode, amount } = req.body;
-
-        // Получаем текущую карту
-        const { data: card, error: fetchError } = await supabase
-            .from('cards')
-            .select('*')
-            .eq('code', cardCode)
-            .single();
-
-        if (fetchError || !card) {
-            return res.status(404).json({ error: 'Карта не найдена' });
-        }
-
-        // Обновляем баланс и историю
-        card.balance += amount;
-        card.history.push({
-            date: new Date().toLocaleString(),
-            type: 'Пополнение',
-            amount: amount
-        });
-
-        // Сохраняем изменения
-        const { error: updateError } = await supabase
-            .from('cards')
-            .update(card)
-            .eq('code', cardCode);
-
-        if (updateError) throw updateError;
-
-        res.json(card);
-    } catch (error) {
-        console.error('Ошибка при пополнении баланса:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-// Перевод между картами
-app.post('/api/cards/transfer', async (req, res) => {
-    try {
-        const { fromCard, toCard, amount } = req.body;
-
-        // Получаем исходную карту
-        const { data: sourceCard, error: fetchSourceError } = await supabase
-            .from('cards')
-            .select('*')
-            .eq('code', fromCard)
-            .single();
-
-        if (fetchSourceError || !sourceCard) {
-            return res.status(404).json({ error: 'Исходная карта не найдена' });
-        }
-
-        // Получаем целевую карту
-        const { data: targetCard, error: fetchTargetError } = await supabase
-            .from('cards')
-            .select('*')
-            .eq('code', toCard)
-            .single();
-
-        if (fetchTargetError || !targetCard) {
-            return res.status(404).json({ error: 'Целевая карта не найдена' });
-        }
-
-        // Проверяем баланс
-        if (sourceCard.balance < amount) {
-            return res.status(400).json({ error: 'Недостаточно средств' });
-        }
-
-        // Обновляем баланс и историю
-        sourceCard.balance -= amount;
-        targetCard.balance += amount;
-
-        sourceCard.history.push({
-            date: new Date().toLocaleString(),
-            type: `Перевод на карту ${toCard}`,
-            amount: -amount
-        });
-
-        targetCard.history.push({
-            date: new Date().toLocaleString(),
-            type: `Перевод от карты ${fromCard}`,
-            amount: amount
-        });
-
-        // Сохраняем изменения
-        const { error: updateSourceError } = await supabase
-            .from('cards')
-            .update(sourceCard)
-            .eq('code', fromCard);
-
-        const { error: updateTargetError } = await supabase
-            .from('cards')
-            .update(targetCard)
-            .eq('code', toCard);
-
-        if (updateSourceError || updateTargetError) {
-            throw updateSourceError || updateTargetError;
-        }
-
-        res.json({ sourceCard, targetCard });
-    } catch (error) {
-        console.error('Ошибка при переводе:', error);
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
