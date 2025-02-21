@@ -1,104 +1,64 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const { createClient } = require('@supabase/supabase-js');
+const express = require("express");
+const cors = require("cors");
 
 const app = express();
-const port = process.env.PORT || 3000;
+app.use(express.json());
+app.use(cors()); // Разрешает запросы с любого источника
 
-// Настройка CORS
-app.use(cors({
-    origin: 'https://ilyshka3346.github.io/card/', // Разрешить запросы с GitHub Pages
-    methods: ['GET', 'POST', 'OPTIONS'], // Разрешить GET, POST и OPTIONS
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true // Разрешить передачу куки и заголовков авторизации
-}));
+const PORT = process.env.PORT || 3000;
 
-// Обработка предварительных запросов (OPTIONS)
-app.options('*', cors()); // Разрешить CORS для всех маршрутов
-
-// Настройка Supabase
-const supabaseUrl = 'https://zkhnijcxqhuljvufgrqa.supabase.co'; // Замените на ваш URL
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpraG5pamN4cWh1bGp2dWZncnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAxMzk0ODYsImV4cCI6MjA1NTcxNTQ4Nn0.CcT8Ok51EpfyWJngtlQgkQQvtmZnN7uLyRW1NGegS6w'; // Замените на ваш ключ
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Middleware
-app.use(bodyParser.json());
-
-// Генерация номера карты
-const generateCardCode = () => {
-    let code = '';
-    for (let i = 0; i < 16; i++) {
-        code += Math.floor(Math.random() * 10);
-    }
-    return code.match(/.{1,4}/g).join(' ');
-};
-
-// Корневой маршрут /api/cards
-app.get('/api/cards', (req, res) => {
-    res.json({ message: 'Добро пожаловать в API банковских карт!' });
-});
+let cards = {}; // Имитация базы данных
 
 // Создание новой карты
-app.post('/api/cards/create', async (req, res) => {
-    try {
-        const cardCode = generateCardCode();
-        const newCard = {
-            code: cardCode,
-            balance: 0,
-            history: []
-        };
-
-        const { data, error } = await supabase
-            .from('cards')
-            .insert([newCard]);
-
-        if (error) throw error;
-
-        res.json(newCard);
-    } catch (error) {
-        console.error('Ошибка при создании карты:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
+app.post("/api/cards/create", (req, res) => {
+    const cardCode = Math.random().toString().slice(2, 12);
+    const newCard = { code: cardCode, balance: 0, history: [] };
+    cards[cardCode] = newCard;
+    res.json(newCard);
 });
 
-// Получение данных карты
-app.get('/api/cards/:cardCode', async (req, res) => {
-    try {
-        const cardCode = req.params.cardCode;
-
-        const { data: card, error } = await supabase
-            .from('cards')
-            .select('*')
-            .eq('code', cardCode)
-            .single();
-
-        if (error || !card) {
-            return res.status(404).json({ error: 'Карта не найдена' });
-        }
-
+// Получение информации о карте
+app.get("/api/cards/:cardCode", (req, res) => {
+    const card = cards[req.params.cardCode];
+    if (card) {
         res.json(card);
-    } catch (error) {
-        console.error('Ошибка при получении данных карты:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
+    } else {
+        res.status(404).json({ error: "Карта не найдена" });
     }
 });
 
-// Обработка 404
-app.use((req, res) => {
-    res.status(404).json({ error: 'Маршрут не найден' });
+// Пополнение баланса
+app.post("/api/cards/deposit", (req, res) => {
+    const { cardCode, amount } = req.body;
+    if (cards[cardCode]) {
+        cards[cardCode].balance += amount;
+        cards[cardCode].history.push({ type: "Пополнение", amount, date: new Date().toISOString() });
+        res.json(cards[cardCode]);
+    } else {
+        res.status(404).json({ error: "Карта не найдена" });
+    }
 });
 
-// Обработка ошибок
-app.use((err, req, res, next) => {
-    console.error('Ошибка сервера:', err);
-    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+// Перевод средств
+app.post("/api/cards/transfer", (req, res) => {
+    const { fromCard, toCard, amount } = req.body;
+    if (cards[fromCard] && cards[toCard]) {
+        if (cards[fromCard].balance >= amount) {
+            cards[fromCard].balance -= amount;
+            cards[toCard].balance += amount;
+
+            const transaction = { type: "Перевод", amount, date: new Date().toISOString() };
+            cards[fromCard].history.push({ ...transaction, to: toCard });
+            cards[toCard].history.push({ ...transaction, from: fromCard });
+
+            res.json({ sourceCard: cards[fromCard], targetCard: cards[toCard] });
+        } else {
+            res.status(400).json({ error: "Недостаточно средств" });
+        }
+    } else {
+        res.status(404).json({ error: "Одна из карт не найдена" });
+    }
 });
 
 // Запуск сервера
-app.listen(port, () => {
-    console.log(`Сервер запущен на http://localhost:${port}`);
-});
-
-// Экспорт для Vercel
-module.exports = app;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
